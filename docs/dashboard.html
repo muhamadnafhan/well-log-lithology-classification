@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Well Log Lithology Classification · FORCE 2020</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1d2125;--muted:#5e6670;--line:#e3e0d8;--track:#ece9e1;--accent:#0f766e;--warn:#c2410c;--bad:#b4443a;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171a;--card:#1c2024;--text:#eceae4;--muted:#9aa3ab;--line:#2d3339;--track:#2a3036;--accent:#2dd4bf;--warn:#fb923c;--bad:#f87171;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171a;--card:#1c2024;--text:#eceae4;--muted:#9aa3ab;--line:#2d3339;--track:#2a3036;--accent:#2dd4bf;--warn:#fb923c;--bad:#f87171;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+h1{font-size:clamp(1.4rem,4vw,2rem);line-height:1.2;margin:0 0 6px}
+h2{font-size:1.05rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 14px;max-width:60ch}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.tag{font-size:.78rem;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--muted);background:var(--card)}
+button{font:inherit;cursor:pointer;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.kpi b{display:block;font-size:1.8rem;line-height:1.1}
+.kpi span{color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;margin-bottom:16px}
+.note{color:var(--muted);font-size:.85rem;margin:2px 0 12px}
+.row{display:grid;grid-template-columns:120px 1fr minmax(72px,auto);gap:8px;align-items:center;margin:5px 0;font-size:.85rem}
+.lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:14px;background:var(--track);border-radius:4px}
+.fill{height:100%;border-radius:4px;background:var(--accent)}
+.fill.warn{background:var(--warn)}.fill.bad{background:var(--bad)}.fill.hi{background:var(--warn)}
+.mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);opacity:.7}
+.val{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vs div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.vs b{font-size:1.5rem}.vs small{display:block;color:var(--muted)}
+.seg{display:flex;gap:6px;margin:6px 0 10px}
+ul{margin:0;padding-left:18px}li{margin:6px 0}
+footer{color:var(--muted);font-size:.8rem;margin-top:20px}
+a{color:var(--accent)}
+@media (max-width:520px){.row{grid-template-columns:96px 1fr}.val{grid-column:2;text-align:left}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1>Lithology Classification from Well Logs</h1>
+    <p class="sub">Predicting rock type at every depth from wireline logs, validated by well on real North Sea data. Personal learning project.</p>
+  </div>
+  <button id="theme" aria-label="Toggle theme">◐</button>
+</header>
+<div class="tags"><span class="tag">FORCE 2020 dataset</span><span class="tag">118 wells · Norwegian Sea</span><span class="tag">Gradient boosting</span><span class="tag">Grouped-by-well validation</span></div>
+
+<section class="kpis">
+  <div class="card kpi"><b>118</b><span>wells, all with labels</span></div>
+  <div class="card kpi"><b>2.34M</b><span>depth samples (1.43M labelled)</span></div>
+  <div class="card kpi"><b>12</b><span>lithology classes, heavily imbalanced</span></div>
+  <div class="card kpi"><b>0.39 ± 0.03</b><span>macro-F1 on unseen wells (baseline: 0.06)</span></div>
+</section>
+
+<section class="card" style="margin-bottom:16px">
+  <h2>The accuracy trap</h2>
+  <p class="note">Shale makes up 61% of labelled rows, so “always predict Shale” already looks decent on accuracy. Macro-F1 weights every class equally and exposes it.</p>
+  <div class="vs">
+    <div><small>Always predict Shale</small><b>~61%</b> accuracy<small>macro-F1 <b style="font-size:1rem">0.063</b></small></div>
+    <div><small>Final model (5-fold grouped CV)</small><b>66%</b> accuracy<small>macro-F1 <b style="font-size:1rem">0.415</b></small></div>
+  </div>
+</section>
+
+<div class="grid">
+  <section class="card">
+    <h2>Class distribution</h2>
+    <p class="note">Rare classes vanish on a linear scale. Try the log view.</p>
+    <div class="seg"><button id="lin" aria-pressed="true">Linear</button><button id="log" aria-pressed="false">Log scale</button></div>
+    <div id="dist"></div>
+  </section>
+  <section class="card">
+    <h2>Experiment log (macro-F1, grouped CV)</h2>
+    <p class="note">Each step changed one thing. Single runs, so small gaps may be noise.</p>
+    <div id="exp"></div>
+  </section>
+</div>
+
+<div class="grid">
+  <section class="card">
+    <h2>How stable is the score?</h2>
+    <p class="note">Five random hold-outs of 20% of wells. Black line = mean (0.390). Classes present in the test wells ranged from 9 to 12, which adds noise.</p>
+    <div id="seeds"></div>
+    <p class="note" style="margin-top:10px">An earlier single hold-out with heavier training settings scored 0.304, below all five splits above.</p>
+  </section>
+  <section class="card">
+    <h2>Per-class F1 (single hold-out, 23 wells)</h2>
+    <p class="note">Large classes are solid; rare classes swing widely between well sets.</p>
+    <div id="cls"></div>
+  </section>
+</div>
+
+<section class="card" style="margin-bottom:16px">
+  <h2>Data quality: missing curves</h2>
+  <p class="note">Missingness is per well (whole curves absent), so mean imputation would mislead. The model handles NaN natively.</p>
+  <div id="miss"></div>
+</section>
+
+<div class="grid">
+  <section class="card">
+    <h2>Key findings</h2>
+    <ul>
+      <li><b>Accuracy hides the picture.</b> Class weighting lowered accuracy but improved rare-class recognition.</li>
+      <li><b>Window size matters.</b> Wide rolling windows (~15 m) blurred thin beds: Halite F1 0.53 with windows (25, 100) vs 0.79 with (5, 25).</li>
+      <li><b>Confidence filtering backfired.</b> About 98% of Tuff labels are lowest-confidence, so filtering removed nearly all Tuff examples.</li>
+      <li><b>Validate by well.</b> Random row splits leak neighbouring samples and inflate scores.</li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Limitations</h2>
+    <ul>
+      <li>Dolomite and Basement are essentially not learned (very few examples).</li>
+      <li>“Sandstone/Shale” is a mixed class and inherently ambiguous.</li>
+      <li>Lithology is rock type, not hydrocarbon detection.</li>
+      <li>Scores are not comparable to the official FORCE 2020 leaderboard (different metric and split).</li>
+    </ul>
+  </section>
+</div>
+
+<footer>Data: FORCE 2020 well log and lithofacies dataset (Bormann et al., 2020), Zenodo, DOI 10.5281/zenodo.4351156, CC BY 4.0. Original logs from the Norwegian government (NOLD 2.0).</footer>
+</main>
+
+<script>
+function bars(id, rows, max, fmt, cls){
+  document.getElementById(id).innerHTML = rows.map(function(r){
+    var w = Math.max(0.6, r.v / max * 100);
+    var mk = r.mark != null ? '<i class="mark" style="left:' + (r.mark / max * 100) + '%"></i>' : '';
+    return '<div class="row"><span class="lab" title="' + r.l + '">' + r.l + '</span><div class="track"><div class="fill ' + (cls ? cls(r) : '') + '" style="width:' + w + '%"></div>' + mk + '</div><span class="val">' + fmt(r) + '</span></div>';
+  }).join('');
+}
+
+var dist = [["Shale",877043],["Sandstone",207704],["Sandstone/Shale",180820],["Limestone",69498],["Marl",41038],["Tuff",17431],["Halite",14712],["Chalk",14043],["Coal",4754],["Dolomite",2391],["Anhydrite",1808],["Basement",141]];
+var TOTAL = 1431383;
+function drawDist(log){
+  var rows = dist.map(function(d){ return {l:d[0], c:d[1], v: log ? Math.log10(d[1]) : d[1]}; });
+  var max = log ? Math.log10(dist[0][1]) : dist[0][1];
+  bars("dist", rows, max, function(r){ return r.c.toLocaleString("en-US") + " · " + (r.c / TOTAL * 100).toFixed(2) + "%"; });
+}
+drawDist(false);
+["lin","log"].forEach(function(id){
+  document.getElementById(id).onclick = function(){
+    document.getElementById("lin").setAttribute("aria-pressed", id === "lin");
+    document.getElementById("log").setAttribute("aria-pressed", id === "log");
+    drawDist(id === "log");
+  };
+});
+
+var exp = [
+  ["0 · Always Shale",0.063,"~0.61"],["1 · 9 raw curves",0.337,"0.57"],["2 · + rolling (25,100)",0.369,"0.62"],
+  ["3 · soft weights 0.5",0.387,"0.70"],["4 · windows (5,25)",0.399,"0.69"],["5 · weights 0.75 (final)",0.415,"0.66"],
+  ["6 · weights 1.0",0.407,"0.61"],["7 · + confidence filter",0.403,"0.66"]];
+bars("exp", exp.map(function(e){ return {l:e[0], v:e[1], a:e[2]}; }), 0.5,
+  function(r){ return r.v.toFixed(3) + " · acc " + r.a; },
+  function(r){ return r.v === 0.415 ? "hi" : (r.v < 0.1 ? "bad" : ""); });
+
+var seeds = [["Split 0 · 12 classes",0.434],["Split 1 · 9 classes",0.406],["Split 2 · 10 classes",0.389],["Split 3 · 10 classes",0.335],["Split 4 · 11 classes",0.385]];
+bars("seeds", seeds.map(function(s){ return {l:s[0], v:s[1], mark:0.390}; }), 0.5, function(r){ return r.v.toFixed(3); });
+
+var cls = [["Shale",0.77],["Sandstone",0.59],["Limestone",0.52],["Chalk",0.35],["Halite",0.32],["Sandstone/Shale",0.26],["Coal",0.18],["Marl",0.17],["Tuff",0.15],["Anhydrite",0.03],["Dolomite",0.01]];
+bars("cls", cls.map(function(c){ return {l:c[0], v:c[1]}; }), 1, function(r){ return r.v.toFixed(2); },
+  function(r){ return r.v >= 0.5 ? "" : (r.v >= 0.25 ? "warn" : "bad"); });
+
+var miss = [["PEF",38.1,74],["NPHI",32.4,92],["SP",31.6,70],["RHOB",13.2,109],["CALI",6.8,109],["DTC",6.1,114],["RMED",3.5,116],["RDEP",0.8,118],["GR",0.1,118]];
+bars("miss", miss.map(function(m){ return {l:m[0], v:m[1], w:m[2]}; }), 100,
+  function(r){ return r.v + "% · " + r.w + "/118 wells"; },
+  function(r){ return r.v > 30 ? "warn" : ""; });
+
+document.getElementById("theme").onclick = function(){
+  var r = document.documentElement;
+  try { r.dataset.theme = getComputedStyle(r).colorScheme === "dark" ? "light" : "dark"; } catch (e) {}
+};
+</script>
+</body>
+</html>
