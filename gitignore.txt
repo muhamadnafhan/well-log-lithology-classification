@@ -1,0 +1,4 @@
+force2020/
+*.zip
+*.parquet
+.ipynb_checkpoints/
