@@ -11,6 +11,12 @@ Predicting rock type at every depth from wireline well logs, using gradient boos
 
 Both are single static HTML files (no server, no external libraries).
 
+Two of the six held-out wells in the viewer: a shale-dominated well with only 5 classes present, where the model looks good (about 84% per-sample accuracy, partly because Shale is the most common and easiest class), and a well with 8 classes where it struggles (about 53%):
+
+| Better case (`35_11-12`) | Harder case (`34_10-19`) |
+|---|---|
+| ![Well 35_11-12](images/well_viewer_good.png) | ![Well 34_10-19](images/well_viewer_bad.png) |
+
 ## Why this problem
 
 Core samples are expensive and rare; well logs exist in almost every well. Interpreting rock type from log curves is traditionally manual, slow and somewhat subjective. This project asks: how far can a simple, well-validated ML pipeline get on real, messy, imbalanced log data?
@@ -33,6 +39,8 @@ Core samples are expensive and rare; well logs exist in almost every well. Inter
 | Marl | 2.9% |
 | Tuff, Halite, Chalk | ~1% each |
 | Coal, Dolomite, Anhydrite, Basement | < 0.35% each (Basement: 141 rows) |
+
+![Lithology distribution](images/class_distribution.png)
 
 Predicting "Shale" everywhere already gives ~61% accuracy, so **accuracy is misleading here**. The main metric is **macro-F1**, which weights every class equally. The "always Shale" baseline scores a macro-F1 of 0.063.
 
@@ -87,6 +95,8 @@ Per-class F1 on that single hold-out (23 wells):
 | Anhydrite | 0.03 |
 | Dolomite | 0.01 |
 
+![Confusion matrix on held-out wells](images/confusion_matrix.png)
+
 ## Findings
 
 1. **Accuracy hides the real picture.** Class weighting lowered accuracy but improved rare-class recognition. Macro-F1 and per-class F1 are the right lens.
@@ -95,14 +105,24 @@ Per-class F1 on that single hold-out (23 wells):
 4. **Filtering by label confidence backfired.** About 98% of Tuff labels carry the lowest confidence level (3), so filtering them out removed nearly all Tuff examples and its F1 collapsed to about 0.
 5. **Large classes are stable, rare classes are not.** Shale, Sandstone and Limestone score consistently across splits; Anhydrite and Halite swing widely depending on which wells land in the test set.
 
-6. **Performance varies a lot from well to well.** On six randomly chosen held-out wells (shown in the well viewer), per-sample accuracy ranged from 53% to 84%. Two of the six had sparse RHOB and NPHI coverage, but they landed at opposite ends (53% and 84%), so curve completeness alone does not explain the gap. Six wells is too few to say more. These accuracies are computed on data downsampled to every 10th sample and are not comparable to the macro-F1 figures above.
+6. **Performance varies a lot from well to well.** Across all 23 held-out wells, per-well accuracy has a mean of 0.59 and a median of 0.63, and ranges from 0.13 to 0.83 (std 0.18). The six randomly chosen wells in the viewer happen to span about 53% to 84%, so they do not show the worst case. Two of the six had sparse RHOB and NPHI coverage, but they landed at opposite ends (53% and 84%), so curve completeness alone does not explain the gap. Six wells is too few to say more. These accuracies are computed on data downsampled to every 10th sample and are not comparable to the macro-F1 figures above.
+
+7. **Accuracy is lower where key curves are missing.** Pooled over the 23 held-out wells (270,165 labelled rows, overall accuracy 0.605):
+
+   | Curve | Accuracy when present | Accuracy when missing | Test rows missing |
+   |---|---|---|---|
+   | RHOB | 0.646 | 0.484 | 25% |
+   | NPHI | 0.652 | 0.500 | 31% |
+   | DTC | 0.636 | 0.386 | 12% |
+   | PEF | 0.646 | 0.569 | 54% |
+
+   This is an association, not proof of cause: curves are missing per well, several curves are often missing together, large wells weigh more in pooled rows, and wells lacking a curve may also differ geologically.
 
 ## Limitations
 
 - Dolomite and Basement are essentially not learned (very few examples).
 - "Sandstone/Shale" is a mixed class and is inherently ambiguous.
 - Results depend on which wells are held out; treat single numbers with caution.
-- The lithology code-to-name mapping follows the competition documentation; please verify against the official repository.
 - Lithology is not hydrocarbon detection. It identifies rock type, which helps locate potential reservoir (sandstone, carbonate) and seal (shale) intervals.
 
 ## Possible next steps
