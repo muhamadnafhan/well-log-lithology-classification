@@ -6,8 +6,8 @@ Predicting rock type at every depth from wireline well logs, using gradient boos
 
 ## Interactive demos
 
-- **[Results dashboard](https://YOUR-USERNAME.github.io/well-log-lithology-classification/dashboard.html)**: class imbalance, experiment log, score stability, data quality. Source: [`docs/dashboard.html`](docs/dashboard.html)
-- **[Well viewer](https://YOUR-USERNAME.github.io/well-log-lithology-classification/well_viewer.html)**: log curves next to true vs predicted lithology, with mismatches highlighted, for 6 randomly chosen held-out wells. Source: [`docs/well_viewer.html`](docs/well_viewer.html)
+- **[Results dashboard](https://muhamadnafhan.github.io/well-log-lithology-classification/dashboard.html)**: class imbalance, experiment log, score stability, data quality. Source: [`docs/dashboard.html`](docs/dashboard.html)
+- **[Well viewer](https://muhamadnafhan.github.io/well-log-lithology-classification/well_viewer.html)**: log curves next to true vs predicted lithology, with mismatches highlighted, for 6 randomly chosen held-out wells. Source: [`docs/well_viewer.html`](docs/well_viewer.html)
 
 Both are single static HTML files (no server, no external libraries).
 
